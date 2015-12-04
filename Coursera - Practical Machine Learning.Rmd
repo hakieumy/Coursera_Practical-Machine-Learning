@@ -1,0 +1,67 @@
+---
+Coursera - Practical Machine Learning
+---
+
+A group of 6 participants took part in a study. They were asked to wear accelerometers on the belt, forearm, arm and dumbell, and then perform barbell lifts correctly and incorrectly in 5 different ways.
+The aim of this project was to use data from those accelerometers to predict the manner in which the participants performed the exercise. The manner is demonstrated by the "classe" variable (A, B, C, D, E) in the training set.
+
+The required packages are:
+	- caret
+	- kernlab
+	- knitr
+	- randomForest
+
+Import training data, assign NA and blank data as NA
+```{r}
+data_training = read.csv("~/pml-training.csv", na.strings = c("NA", "", " "))
+```
+
+Select columns containing NAs
+```{r}
+data_training_NAs = apply(data_training, 2, function(x) {sum(is.na(x))})
+```
+
+Remove columns with NAs from the training data
+```{r}
+data_training_clean = data_training[, which(data_training_NAs == 0)]
+```
+
+Select only from the 8th column onwards, remove unnecessary columns with labels and id
+```{r}
+data_training_clean = data_training_clean[, 8:length(data_training_clean)]
+```
+
+Split the training data: 70% into training set, 30% into cross-validation set
+```{r}
+inTrain = createDataPartition(y = data_training_clean$classe, p = 0.7, list = F)
+training = data_training_clean[inTrain,]
+crossval = data_training_clean[-inTrain,]
+```
+
+Build the training model, model the 'classe' variable based on all the remaining variables
+```{r}
+model = randomForest(classe ~ ., data = training)
+```
+
+Validate the model on the cross-validation set
+```{r}
+predictCrossVal = predict(model, crossval)
+```
+
+Check cross-validation accuracy
+```{r}
+confusionMatrix(crossval$classe, predictCrossVal)
+```
+
+Import testing data in the same manner as training data
+```{r}
+data_test = read.csv("~/pml-testing.csv", na.strings = c("NA", "", " "))
+data_test_NAs = apply(data_test, 2, function(x) {sum(is.na(x))})
+data_test_clean = data_test[, which(data_test_NAs == 0)]
+data_test_clean = data_test_clean[, 8:length(data_test_clean)]
+```
+
+Apply the model on the testing set
+```{r}
+predictTest = predict(model, data_test_clean)
+```
